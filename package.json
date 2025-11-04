@@ -1,0 +1,18 @@
+{
+    "name": "postgres-crud-students",
+    "version": "1.0.0",
+    "type": "module",
+    "description": "PostgreSQL CRUD demo (students) with Node.js and pg",
+    "scripts": {
+      "list": "node src/index.js list",
+      "add": "node src/index.js add",
+      "update": "node src/index.js update",
+      "delete": "node src/index.js delete",
+      "demo": "node -e \"import('./src/index.js').then(async m=>{console.log('Initial:');console.table(await m.getAllStudents());const r=await m.addStudent('Alice','Wonder','alice@example.com','2024-09-01');console.log('Inserted Alice id', r.student_id);console.log('After insert:');console.table(await m.getAllStudents());await m.updateStudentEmail(r.student_id,'alice.wonder@example.com');console.log('After update:');console.table(await m.getAllStudents());await m.deleteStudent(r.student_id);console.log('After delete:');console.table(await m.getAllStudents());process.exit(0);})\""
+    },
+    "dependencies": {
+      "dotenv": "^16.4.5",
+      "pg": "^8.13.0"
+    }
+  }
+  

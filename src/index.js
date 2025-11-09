@@ -1,6 +1,10 @@
+// Import required modules for environment variables and PostgreSQL database connection
 import dotenv from "dotenv";
 import pg from "pg";
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
 
+// Load environment variables from .env file to configure database connection
 dotenv.config();
 const { Pool } = pg;
 
@@ -18,8 +22,10 @@ const pool = new Pool(
       }
 );
 
-// Retrieve all students from the database
+
+//Retrieves and displays all records from the students table
 export async function getAllStudents() {
+  // Execute SQL SELECT query to fetch all students, ordered by student_id
   const { rows } = await pool.query(
     `SELECT student_id, first_name, last_name, email, enrollment_date
      FROM students
@@ -29,9 +35,11 @@ export async function getAllStudents() {
 }
 
 
-// Add a new student to the database
-// Using parameterized queries ($1, $2, etc.) prevents SQL injection attacks
+
+//Inserts a new student record into the students table
 export async function addStudent(first_name, last_name, email, enrollment_date) {
+  // Execute INSERT query with parameterized values ($1, $2, $3, $4) to prevent SQL injection attacks
+  // RETURNING clause retrieves the newly inserted row including the auto-generated student_id
   const { rows } = await pool.query(
     `INSERT INTO students (first_name, last_name, email, enrollment_date)
      VALUES ($1, $2, $3, $4)
@@ -41,8 +49,10 @@ export async function addStudent(first_name, last_name, email, enrollment_date) 
   return rows[0];
 }
 
-// Update a student's email address
+//Updates the email address for a student with the specified student_id
 export async function updateStudentEmail(student_id, new_email) {
+  // Execute UPDATE query to modify email for the student matching the given student_id
+  // RETURNING clause retrieves the updated row to confirm the change
   const { rows } = await pool.query(
     `UPDATE students
      SET email = $2
@@ -50,12 +60,16 @@ export async function updateStudentEmail(student_id, new_email) {
      RETURNING student_id, first_name, last_name, email, enrollment_date;`,
     [student_id, new_email]
   );
+  // Return null if no student was found (rows[0] would be undefined)
   return rows[0] ?? null;
 }
 
-// Delete a student from the database
+//Deletes the record of the student with the specified student_id
 export async function deleteStudent(student_id) {
+  // Execute DELETE query to remove the student with the given student_id
+  // Use parameterized query to safely pass the student_id
   const res = await pool.query(`DELETE FROM students WHERE student_id = $1;`, [student_id]);
+  // Return the number of rows deleted to indicate success (1) or failure (0)
   return res.rowCount;
 }
 
@@ -121,6 +135,18 @@ async function runCLI() {
 }
 
 // Run CLI if this file is executed directly (not imported as a module)
-if (import.meta.url === `file://${process.argv[1]}`) {
+// Check if this is the main module by comparing the file path
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+// Check if the script is being run directly (not imported)
+const isMainModule = process.argv[1] && (
+  process.argv[1].replace(/\\/g, '/') === __filename.replace(/\\/g, '/') ||
+  process.argv[1].endsWith('index.js') ||
+  process.argv[1].endsWith('src\\index.js') ||
+  process.argv[1].endsWith('src/index.js')
+);
+
+if (isMainModule) {
   runCLI();
 }

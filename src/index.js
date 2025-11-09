@@ -4,6 +4,8 @@ import pg from "pg";
 dotenv.config();
 const { Pool } = pg;
 
+// Create database connection pool (reuses connections for efficiency)
+// Uses DATABASE_URL if available (for cloud deployments), otherwise uses individual connection parameters
 const pool = new Pool(
   process.env.DATABASE_URL
     ? { connectionString: process.env.DATABASE_URL, ssl: process.env.PGSSL === "true" ? { rejectUnauthorized: false } : false }
@@ -16,6 +18,7 @@ const pool = new Pool(
       }
 );
 
+// Retrieve all students from the database
 export async function getAllStudents() {
   const { rows } = await pool.query(
     `SELECT student_id, first_name, last_name, email, enrollment_date
@@ -26,6 +29,8 @@ export async function getAllStudents() {
 }
 
 
+// Add a new student to the database
+// Using parameterized queries ($1, $2, etc.) prevents SQL injection attacks
 export async function addStudent(first_name, last_name, email, enrollment_date) {
   const { rows } = await pool.query(
     `INSERT INTO students (first_name, last_name, email, enrollment_date)
@@ -36,6 +41,7 @@ export async function addStudent(first_name, last_name, email, enrollment_date) 
   return rows[0];
 }
 
+// Update a student's email address
 export async function updateStudentEmail(student_id, new_email) {
   const { rows } = await pool.query(
     `UPDATE students
@@ -47,11 +53,13 @@ export async function updateStudentEmail(student_id, new_email) {
   return rows[0] ?? null;
 }
 
+// Delete a student from the database
 export async function deleteStudent(student_id) {
   const res = await pool.query(`DELETE FROM students WHERE student_id = $1;`, [student_id]);
   return res.rowCount;
 }
 
+// Handle command-line interface interactions
 async function runCLI() {
   const [cmd, ...args] = process.argv.slice(2);
 
@@ -99,6 +107,7 @@ async function runCLI() {
   delete <student_id>`);
     }
   } catch (err) {
+    // Handle PostgreSQL error codes
     if (err.code === "23505") {
       console.error("Error: duplicate email (violates UNIQUE constraint).");
     } else if (err.code === "22P02") {
@@ -111,6 +120,7 @@ async function runCLI() {
   }
 }
 
+// Run CLI if this file is executed directly (not imported as a module)
 if (import.meta.url === `file://${process.argv[1]}`) {
   runCLI();
 }
